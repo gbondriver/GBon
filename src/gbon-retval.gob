@@ -1,0 +1,38 @@
+class GBon:RetVal from G:Object
+{
+    public gboolean status;
+    public guint size;
+    public guint remain;
+    private gsize buf_size;
+    private guint8 *buf = NULL
+        destroy {
+            if (VAR) {
+                g_printerr("free buf\n");
+                g_free(VAR);
+            }
+        };
+/**
+ * get_buf: 
+ * Returns: (array length=buf_size)
+ */
+    public guint8 *get_buf(self, gsize *buf_size) {
+        *buf_size = self->_priv->buf_size;
+        return self->_priv->buf;
+    }
+
+    public void set_buf(self, guint8 *from, gsize buf_size) {
+        self->_priv->buf_size = buf_size;
+	if (self->_priv->buf) g_free(self->_priv->buf); 
+	self->_priv->buf = g_malloc(buf_size);
+        memcpy(self->_priv->buf, from, buf_size);
+
+    }
+
+    public GBon:RetVal *new (void) {
+        return  (GBonRetVal *)GET_NEW;
+    }
+
+    public gchar *test(void) {
+        return g_strdup("test OK");
+    }
+}

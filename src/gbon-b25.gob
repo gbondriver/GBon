@@ -1,0 +1,205 @@
+/* -*- tab-width: 4; indent-tabs-mode: nil -*- */
+
+%headertop{
+#include "../config.h"
+%}
+
+%privateheader{
+#ifdef HAVE_LIBARIB25
+#include <arib25/arib_std_b25.h>
+#include <arib25/b_cas_card.h>
+#else
+typedef struct {
+    void *dummy;
+} ARIB_STD_B25;
+
+typedef struct {
+    void *dummy;
+} B_CAS_CARD;
+
+typedef struct {
+    void *dummy;
+} ARIB_STD_B25_BUFFER;
+#endif
+%}
+
+class GBon:B25 from G:Object
+{
+    private ARIB_STD_B25 *b25 = NULL
+        destroy {
+            if (VAR) {
+                g_printerr("release b25\n");
+#ifdef HAVE_LIBARIB25
+                VAR->release(VAR);
+#endif
+            }
+        };
+    private B_CAS_CARD *bcas = NULL
+        destroy {
+            if (VAR) {
+                g_printerr("release bcas\n");
+#ifdef HAVE_LIBARIB25
+                VAR->release(VAR);
+#endif
+            }
+        };
+
+    private gint round;
+    private gint strip;
+    private gint emm;
+
+    private GQuark gquark= {g_quark_from_static_string("GBon:B25")};
+
+    public gboolean is_enabled(void) {
+#ifdef HAVE_LIBARIB25
+        return TRUE;
+#else
+        return FALSE;
+#endif
+    }
+
+    public void startup(self, gint round, gboolean strip,
+    gboolean emm, GError **err) {
+#ifdef HAVE_LIBARIB25
+        self->_priv->round = round;
+        self->_priv->strip = strip;
+        self->_priv->emm = emm;
+
+        int code;
+        
+        ARIB_STD_B25 *b25 = create_arib_std_b25();
+        if(!b25) {
+            *err = g_error_new(self->_priv->gquark, -1,
+                               "startup(): create_arib_std_b25 failed\n");
+            return;
+        }
+        self->_priv->b25 = b25;
+
+        code = b25->set_multi2_round(b25, round);
+        if(code < 0) {
+            *err = g_error_new
+                (self->_priv->gquark, -2,
+                 "startup(): set_multi2_round failed: %d\n", code);
+            return;
+        }
+        
+        code = b25->set_strip(b25, strip);
+        if(code < 0) {
+            *err = g_error_new(self->_priv->gquark, -3,
+                               "startup(): set_strip failed: %d\n", code);
+            return;
+        }
+        
+        code = b25->set_emm_proc(b25, emm);
+        if(code < 0) {
+            *err = g_error_new(self->_priv->gquark, -4,
+                               "startup(): set_emm_proc failed: %d\n", code);
+            return;
+        }
+
+        B_CAS_CARD *bcas = create_b_cas_card();
+        if(!bcas) {
+            *err = g_error_new
+                (self->_priv->gquark, -5,
+                 "startup(): create_b_cas_card failed: %d\n", code);
+            return;
+        }
+        self->_priv->bcas = bcas;
+
+        code = bcas->init(bcas);
+        if(code < 0) {
+            *err = g_error_new(self->_priv->gquark, -6,
+                               "startup(): bcas->init failed: %d\n", code);
+            return;
+        }
+        
+        code = b25->set_b_cas_card(b25, bcas);
+        if(code < 0) {
+            *err = g_error_new(self->_priv->gquark, -7,
+                               "startup(): set_b_cas_card failed: %d\n", code);
+            return;
+        }
+#endif
+    }
+
+
+/**
+ * decode: 
+ * Returns: (array length=dest_size)
+ */
+    public guint8 *decode(self, guint8 *src, gsize src_size,
+                          gsize *dest_size, GError **err) {
+#ifdef HAVE_LIBARIB25
+        int code;
+        ARIB_STD_B25_BUFFER sbuf;
+        sbuf.data = src;
+        sbuf.size = src_size;
+  
+        ARIB_STD_B25 *b25 = self->_priv->b25;
+	if (!b25) {	
+	    *err = g_error_new(self->_priv->gquark, -31,
+                               "decode(): b25 is NULL. should call startup() firest.\n");
+            return NULL;
+        }
+
+        code = b25->put(b25, &sbuf);
+        if(code < 0) {
+            *err = g_error_new(self->_priv->gquark, -8,
+                               "decode(): b25->put failed: %d\n", code);
+            return NULL;
+        }
+
+        ARIB_STD_B25_BUFFER dbuf;
+        code = b25->get(b25, &dbuf);
+        if(code != 0) {
+            *err = g_error_new(self->_priv->gquark, -9,
+                               "decode(): b25->get failed: %d\n", code);
+            return NULL;
+        }
+        
+        *dest_size = dbuf.size;
+        return dbuf.data;
+#endif
+    }
+
+/**
+ * finish: 
+ * Returns: (array length=dest_size)
+ */
+    public guint8 *finish(self, gsize *dest_size, GError **err) {
+#ifdef HAVE_LIBARIB25
+        int code;
+  
+        ARIB_STD_B25 *b25 = self->_priv->b25;
+	if (!b25) {	
+	    *err = g_error_new(self->_priv->gquark, -30,
+                               "finish(): b25 is NULL. should call startup() firest.\n");
+            return NULL;
+        }
+
+        code = b25->flush(b25);
+        if(code < 0) {
+            *err = g_error_new(self->_priv->gquark, -10,
+                               "finish(): b25->flush failed: %d\n", code);
+            return NULL;
+        }
+        
+        ARIB_STD_B25_BUFFER dbuf;
+        code = b25->get(b25, &dbuf);
+        if(code < 0) {
+            *err = g_error_new(self->_priv->gquark, -11,
+                               "finish(): b25->get failed: %d\n", code);
+            return NULL;
+        }
+
+        *dest_size = dbuf.size;
+        return dbuf.data;
+#else
+	return NULL;
+#endif
+}
+
+    public GBon:B25 *new (void) {
+        return  (GBonB25 *)(GET_NEW);
+    }
+}

@@ -1,0 +1,127 @@
+requires 2.0.0
+
+
+%headertop{
+#include <stdio.h>
+#include <stdlib.h>
+#include <../config.h>    
+#include "gbon-retval.h"
+#include "gbon-b25.h"
+%}
+
+%privateheader{
+#include "cbon.h"
+%}
+
+
+
+class GBon:Driver from G:Object
+{
+    private CBon *cbon = NULL
+        destroy {
+            g_printerr("free cbon\n");
+            if (VAR) free(VAR);
+        };
+
+    private GBonB25 *b25 = NULL
+        destroy {
+            if (VAR) {
+                g_printerr("unref b25\n");
+                g_object_unref(VAR);
+            }
+        };
+                               
+    private GQuark gquark= {g_quark_from_static_string("GBon")};
+
+
+    public void load_module(self, gchar *driverFilename, GError **err) {
+        self->_priv->cbon = cbon_load_module(driverFilename);
+        if (self->_priv->cbon) 
+            return;
+        if (err == NULL) exit(1);
+        
+        *err = g_error_new(self->_priv->gquark,
+                           -1, "load_module() error\n");
+    }
+
+    public void create_driver(self, GError **err) {
+        gint ret = cbon_create_driver(self->_priv->cbon);
+        if (ret)
+            *err = g_error_new(self->_priv->gquark,
+                               -3, "create_driver() error: %d\n", ret);
+    }
+
+
+    public void open_tuner(self, GError **err) {
+        gint b = cbon_open_tuner(self->_priv->cbon);
+        if (!b)
+            *err = g_error_new(self->_priv->gquark,
+                               -4, "open_tuner() error\n");
+    }
+
+    public void set_channel(self, guint8 space, guint8 ch, GError **err) {
+        gint b = cbon_set_channel(self->_priv->cbon, space, ch);
+        if (!b)
+            *err = g_error_new(self->_priv->gquark,
+                               -5, "set_channel() error\n");
+    }
+
+/**
+ * get_ts_stream:
+ * @b25: (nullable)
+ * Returns: (transfer full)
+ *
+ */
+    public GBon:RetVal *get_ts_stream(self, GBon:B25 *b25) {
+        guint8 *dest;
+	guint size, remain;
+        gint b = cbon_get_ts_stream(self->_priv->cbon, &dest, &size, &remain);
+        GBonRetVal *rv = gbon_retval_new();
+        rv->status = b;
+        rv->size = size;
+        rv->remain = remain;
+        if (!b) return rv;
+        if (b25) {
+            if (gbon_b25_is_enabled()) {
+                GError *b25_err = NULL;
+                guint8 *b25_dbuf;
+                gsize b25_size;
+                b25_dbuf = gbon_b25_decode
+                    (b25, dest, size, &b25_size, &b25_err);
+                if (b25_err) {
+                    g_printerr
+                        ("%s: %d:\n", b25_err->message, b25_err->code);
+		    gbon_retval_set_buf(rv, dest, size);
+		} else {
+                    gbon_retval_set_buf(rv, b25_dbuf, b25_size);
+		    rv->size = b25_size;
+		}
+            } else {
+                g_printerr("b25 decoding is desabled\n");
+                gbon_retval_set_buf(rv, dest, size);
+            }
+        } else {
+            gbon_retval_set_buf(rv, dest, size);
+        }
+        return rv;
+    }
+
+    
+/**
+ * read2: 
+ * Returns: (transfer none)
+ *
+ */
+    public GBonRetVal *read2(self, GError **err) {
+        *err = g_error_new(self->_priv->gquark,
+                           -5, "error test %d\n", -5);
+        return NULL;
+        
+    }
+
+    public GBon:Driver *new (void) {
+        return  (GBonDriver *)(GET_NEW);
+    }
+}
+
+    
