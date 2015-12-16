@@ -13,7 +13,6 @@ Install many package like gob2, gobject-introspect, libgirepository, etc.
 
 ## How to test
  edit test.py. BonDriver's Path and channel.
- 
  and
  
  python test.py
