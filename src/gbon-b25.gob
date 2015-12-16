@@ -59,7 +59,7 @@ class GBon:B25 from G:Object
     }
 
     public void startup(self, gint round, gboolean strip,
-    gboolean emm, GError **err) {
+                        gboolean emm, GError **err) {
 #ifdef HAVE_LIBARIB25
         self->_priv->round = round;
         self->_priv->strip = strip;
