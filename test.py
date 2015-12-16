@@ -10,10 +10,6 @@ driver = GBon.Driver.new()
 b25 = GBon.B25.new()
 
 try:
-    if b25.is_enabled():
-        print("b25 startup")
-        b25.startup(4, False, False)
-        
     print("load module")
     #driver.load_module('/usr/lib64/libGL.so.1')
     #if not driver.load_module('./BonDriver_LinuxPT.so'):
@@ -29,6 +25,10 @@ try:
     print("set channel2")
     driver.set_channel2(0, 72)
 
+    if b25.is_enabled():
+        print("b25 startup")
+        b25.startup(4, False, False)
+        
     f = open("test.ts", 'wb')
     
     while True:
