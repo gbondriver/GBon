@@ -19,8 +19,11 @@ class GBon:Driver from G:Object
 {
     private CBon *cbon = NULL
         destroy {
-            g_printerr("free cbon\n");
-            if (VAR) free(VAR);
+            if (VAR) {
+                g_printerr("free cbon\n");
+                cbon_close_module(VAR);
+                free(VAR);
+            }
         };
 
     private GBonB25 *b25 = NULL
@@ -44,6 +47,10 @@ class GBon:Driver from G:Object
                            -1, "load_module() error\n");
     }
 
+    public void close_module(self) {
+        cbon_close_module(self->_priv->cbon);
+    }
+
     public void create_driver(self, GError **err) {
         gint ret = cbon_create_driver(self->_priv->cbon);
         if (ret)
@@ -59,11 +66,18 @@ class GBon:Driver from G:Object
                                -4, "open_tuner() error\n");
     }
 
-    public void set_channel(self, guint8 space, guint8 ch, GError **err) {
-        gint b = cbon_set_channel(self->_priv->cbon, space, ch);
+    public void set_channel(self, guint8 space, GError **err) {
+        gint b = cbon_set_channel(self->_priv->cbon, ch);
         if (!b)
             *err = g_error_new(self->_priv->gquark,
                                -5, "set_channel() error\n");
+    }
+
+    public void set_channel2(self, guint8 space, guint8 ch, GError **err) {
+        gint b = cbon_set_channel2(self->_priv->cbon, space, ch);
+        if (!b)
+            *err = g_error_new(self->_priv->gquark,
+                               -5, "set_channel2() error\n");
     }
 
 /**
@@ -106,7 +120,14 @@ class GBon:Driver from G:Object
         return rv;
     }
 
-    
+    public void close_tuner(self) {
+        cbon_close_tuner(self->_priv->cbon);
+    }
+
+    public void release(self) {
+        cbon_release(self->_priv->cbon);
+    }
+
 /**
  * read2: 
  * Returns: (transfer none)

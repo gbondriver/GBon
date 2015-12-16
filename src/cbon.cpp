@@ -22,7 +22,24 @@ CBon *cbon_load_module(char *driverFilename) {
     return cbon;
 }
 
+void cbon_close_module(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return;
+    }
+    if (cbon->hModule == NULL) {
+        PERR("cbon->hModule is NULL\n");
+        return;
+    }
+    ::dlclose(cbon->hModule);
+        
+}
+
 int cbon_create_driver(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return -1;
+    }
     dlerror(); //clear error
     char *err;
     IBonDriver *(*f)() = (IBonDriver *(*)())::dlsym(cbon->hModule,
@@ -52,6 +69,10 @@ int cbon_create_driver(CBon *cbon) {
 }
 
 int cbon_open_tuner(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
     if (cbon->pIBon == NULL) {
         PERR("pIBon is NULL\n");
         return 0;
@@ -60,18 +81,38 @@ int cbon_open_tuner(CBon *cbon) {
     return bon->OpenTuner();
 }
 
-int cbon_set_channel(CBon *cbon, unsigned char space, unsigned char ch) {
+int cbon_set_channel(CBon *cbon, unsigned char ch) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
+    if (cbon->pIBon == NULL) {
+        PERR("pIBon is NULL\n");
+        return 0;
+    }
+    IBonDriver *bon = static_cast<IBonDriver *>(cbon->pIBon);
+    return bon->SetChannel(ch);
+}
+
+int cbon_set_channel2(CBon *cbon, unsigned char space, unsigned char ch) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
     if (cbon->pIBon2 == NULL) {
         PERR("pIBon2 is NULL\n");
         return 0;
     }
     IBonDriver2 *bon = static_cast<IBonDriver2 *>(cbon->pIBon2);
     return bon->SetChannel(space, ch);
-    //return bon->SetChannel(ch);
 }
 
 int cbon_get_ts_stream(CBon *cbon, unsigned char **dest, unsigned int *size,
                        unsigned int *remain) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
     if (cbon->pIBon == NULL) {
         PERR("pIBon is NULL\n");
         return 0;
@@ -80,3 +121,28 @@ int cbon_get_ts_stream(CBon *cbon, unsigned char **dest, unsigned int *size,
     return bon->GetTsStream(dest, size, remain);
 }
 
+void cbon_close_tuner(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return;
+    }
+    if (cbon->pIBon == NULL) {
+        PERR("pIBon is NULL\n");
+        return;
+    }
+    IBonDriver *bon = static_cast<IBonDriver *>(cbon->pIBon);
+    bon->CloseTuner();
+}
+
+void cbon_release(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return;
+    }
+    if (cbon->pIBon == NULL) {
+        PERR("pIBon is NULL\n");
+        return;
+    }
+    IBonDriver *bon = static_cast<IBonDriver *>(cbon->pIBon);
+    bon->Release();
+}

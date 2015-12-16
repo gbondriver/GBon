@@ -26,8 +26,8 @@ try:
     print("open tuner")
     driver.open_tuner()
     
-    print("set channel")
-    driver.set_channel(0, 72)
+    print("set channel2")
+    driver.set_channel2(0, 72)
 
     f = open("test.ts", 'wb')
     
@@ -48,5 +48,11 @@ try:
                 
 except GLib.GError as e:
     print("%s: %d: %s" % (e.domain , e.code , e.message))
+    driver.close_tuner();
+    driver.release();
+    driver.close_module();
     exit(-e.code)
 
+driver.close_tuner();
+driver.release();
+driver.close_module();
