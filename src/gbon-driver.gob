@@ -66,7 +66,7 @@ class GBon:Driver from G:Object
                                -4, "open_tuner() error\n");
     }
 
-    public void set_channel(self, guint8 space, GError **err) {
+    public void set_channel(self, guint8 ch, GError **err) {
         gint b = cbon_set_channel(self->_priv->cbon, ch);
         if (!b)
             *err = g_error_new(self->_priv->gquark,
