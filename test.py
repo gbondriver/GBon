@@ -7,7 +7,7 @@ from gi.repository import GLib
 import time
 
 driver = GBon.Driver.new()
-b25 = GBon.B25.new()
+
 
 try:
     print("load module")
@@ -24,18 +24,20 @@ try:
     
     print("set channel2")
     driver.set_channel2(0, 72)
-
-    if b25.is_enabled():
+    b25 = None
+    if GBon.B25.is_enabled():
+        b25 = GBon.B25.new()
         print("b25 startup")
         b25.startup(4, False, False)
         
     f = open("test.ts", 'wb')
     
     while True:
-        if b25.is_enabled():
-            retval = driver.get_ts_stream(b25)
-        else:
-            retval = driver.get_ts_stream()
+#        if b25.is_enabled():
+#            retval = driver.get_ts_stream(b25)
+#        else:
+#            retval = driver.get_ts_stream()
+        retval = driver.get_ts_stream(b25)
         if (retval.status):
             print("%d, %d" % (retval.size, retval.remain))
             buf = retval.get_buf()
@@ -52,7 +54,7 @@ except GLib.GError as e:
     driver.release();
     driver.close_module();
     exit(-e.code)
-
-driver.close_tuner();
-driver.release();
-driver.close_module();
+except KeyboardInterrupt:
+    driver.close_tuner();
+    driver.release();
+    driver.close_module();
