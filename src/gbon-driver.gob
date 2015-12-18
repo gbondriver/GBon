@@ -21,7 +21,6 @@ class GBon:Driver from G:Object
         destroy {
             if (VAR) {
                 g_printerr("free cbon\n");
-                cbon_close_module(VAR);
                 free(VAR);
             }
         };
