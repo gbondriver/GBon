@@ -2,7 +2,7 @@ BonDriver GObject wrapper
 ===
 
 ## How to build
-Install many package like gob2, gobject-introspect, libgirepository, etc.
+Install many package like gob2, gobject-introspection, libgirepository, etc.
 ```
 ./autogen.sh
 ./configure --prefix=/usr --enable-b25
