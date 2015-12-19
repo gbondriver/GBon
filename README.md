@@ -10,11 +10,10 @@ make
 sudo make install
 ```
 ## How to test
- edit test.py. BonDriver's Path and channel.
- and
+ like
 ``` 
-python test.py
+python test.py <bondriver path> <spaceNo> <channel> <time> <outfile>
 ```
- test.ts file is created if success.
+ <outfile> is created if success.
 
 
