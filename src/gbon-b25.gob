@@ -31,7 +31,6 @@ class GBon:B25 from G:Object
                 g_printerr("release b25\n");
 #ifdef HAVE_LIBARIB25
                 VAR->release(VAR);
-		free(VAR);
 #endif
             }
         };
@@ -41,7 +40,6 @@ class GBon:B25 from G:Object
                 g_printerr("release bcas\n");
 #ifdef HAVE_LIBARIB25
                 VAR->release(VAR);
-		free(VAR);
 #endif
             }
         };
