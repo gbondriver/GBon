@@ -24,6 +24,10 @@ try:
     
     print("set channel2")
     driver.set_channel2(0, 72)
+
+    sl = driver.get_signal_level()
+    print("signal level: %f" % sl)
+    
     b25 = None
     if GBon.B25.is_enabled():
         b25 = GBon.B25.new()

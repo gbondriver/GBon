@@ -76,7 +76,15 @@ class GBon:Driver from G:Object
         gint b = cbon_set_channel2(self->_priv->cbon, space, ch);
         if (!b)
             *err = g_error_new(self->_priv->gquark,
-                               -5, "set_channel2() error\n");
+                               -6, "set_channel2() error\n");
+    }
+
+    public gfloat get_signal_level(self, GError **err) {
+        gfloat f = cbon_get_signal_level(self->_priv->cbon);
+        if (f < 0.0)
+            *err = g_error_new(self->_priv->gquark,
+                               -7, "get_signal_level() error\n");
+        return f;
     }
 
 /**

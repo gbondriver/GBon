@@ -107,6 +107,19 @@ int cbon_set_channel2(CBon *cbon, unsigned char space, unsigned char ch) {
     return bon->SetChannel(space, ch);
 }
 
+float cbon_get_signal_level(CBon *cbon) {
+   if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return -1.0;
+    }
+    if (cbon->pIBon == NULL) {
+        PERR("pIBon is NULL\n");
+        return -2.0;
+    }
+    IBonDriver *bon = static_cast<IBonDriver *>(cbon->pIBon);
+    return bon->GetSignalLevel();
+}
+
 int cbon_get_ts_stream(CBon *cbon, unsigned char **dest, unsigned int *size,
                        unsigned int *remain) {
     if (cbon == NULL) {
