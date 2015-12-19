@@ -10,10 +10,13 @@ make
 sudo make install
 ```
 ## How to test
- like
 ``` 
 python test.py <bondriver path> <spaceNo> <channel> <time> <outfile>
 ```
- <outfile> is created if success.
+like
+```
+python test.py /home/BonDriver/BonDriver_Proxy-T.so 0 72 10 test.ts
+```
+ test.ts is created if success.
 
 
