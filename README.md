@@ -1,14 +1,14 @@
 BonDriver GObject wrapper
 ===
 
-BonDriverのGObjectへのラッパーです。
-python等で、録画とか視聴とかのプログラムを書きやすくするのがねらいです。
+  BonDriverのGObjectへのラッパーです。
+  python等で、録画とか視聴とかのプログラムを書きやすくするのがねらいです。
 
 ## BUild
-gcc, g++, autoconf, gob2, gobject-introspection, libgirepositoryなどの開発用のパッケージを入れます。　　
-BonDriverProxy_Linuxのソースも必要です。同じ階層に並べて下さい。　　
-libaribは、任意です。　　
-そしたら、　　
+  gcc, g++, autoconf, gob2, gobject-introspection, libgirepositoryなどの開発用のパッケージを入れます。　　
+  BonDriverProxy_Linuxのソースも必要です。同じ階層に並べて下さい。　　
+  libaribは、任意です。　　
+  そしたら、　　
 ```
 ./autogen.sh
 ./configure --prefix=/usr --enable-b25
