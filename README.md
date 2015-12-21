@@ -7,10 +7,8 @@ BonDriver GObject wrapper
 ## BUild
 
   gcc, g++, autoconf, gob2, gobject-introspection, libgirepositoryなどの開発用のパッケージを入れます。　　
-  BonDriverProxy_Linuxのソースも必要です。同じ階層に並べて下さい。　　
-  
-  libaribは、任意です。　　
-  
+  BonDriverProxy_Linuxのソースも必要です。同じ階層に並べて下さい。  
+  libaribは、任意です。  
   そしたら、
   
 ```
