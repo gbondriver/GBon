@@ -20,8 +20,6 @@ int cbon_get_ts_stream(CBon *cbon, unsigned char **dest,
                         unsigned int *size, unsigned int *remain);
 void cbon_close_tuner(CBon *cbon);
 void cbon_release(CBon *cbon);
-
-
 #ifdef __cplusplus
 }
 #endif
