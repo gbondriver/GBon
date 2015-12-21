@@ -31,7 +31,7 @@ class Recorder(threading.Thread):
         self.isRequestedStop = True
 
 if len(sys.argv) < 6:
-    print("Usage: %s bondriver spaceNo ch time outfile")
+    print("Usage: %s bondriver spaceNo ch time outfile" % sys.argv[0])
     exit(1)
 
 bondriver = sys.argv[1]
@@ -84,6 +84,13 @@ except GLib.GError as e:
     driver.close_module();
     exit(-e.code)
 except KeyboardInterrupt:
-    driver.close_tuner();
-    driver.release();
-    driver.close_module();
+    th.stop()
+    th.join()
+    pass
+print("close tuner")
+driver.close_tuner()
+print("release driver")
+driver.release()
+print("close module")
+driver.close_module()
+    
