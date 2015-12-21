@@ -40,7 +40,7 @@ python test.py /home/BonDriver/BonDriver_Proxy-T.so 0 72 10 test.ts
 python testwatch.py <bondriver> <spaceNo> <channel>
 ```
 
-  です。gstreamer1.0が必要です。
+  です。gstreamer1.0以上が必要です。
 
 ## まだできてないけど、やりたいこと
 
