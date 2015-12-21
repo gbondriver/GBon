@@ -16,6 +16,7 @@ int cbon_create_driver(CBon *cbon);
 int cbon_open_tuner(CBon *cbon);
 int cbon_set_channel(CBon *cbon, unsigned char ch);
 int cbon_set_channel2(CBon *cbon, unsigned char space, unsigned char ch);
+float cbon_get_signal_level(CBon *cbon);
 int cbon_get_ts_stream(CBon *cbon, unsigned char **dest,
                         unsigned int *size, unsigned int *remain);
 void cbon_close_tuner(CBon *cbon);
