@@ -1,3 +1,4 @@
+SUBDIRS = epgdump
 CLEANFILES = gbon-driver.c gbon-driver.h gbon-retval.c gbon-retval.h  \
 	gbon-b25.c gbon-b25.h
 
@@ -12,7 +13,7 @@ lib_LTLIBRARIES =				\
 	libgbon.la
 
 libgbon_la_LIBADD =				\
-	$(GLIB_LIBS) 
+	$(GLIB_LIBS)  epgdump/libepgdump.la
 
 libgbon_la_SOURCES =	cbon.cpp			\
 	gbon-driver.c  	gbon-driver.h \

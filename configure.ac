@@ -80,6 +80,7 @@ AC_LANG_POP([C++])
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
+  src/epgdump/Makefile
 ])
 
 AC_OUTPUT

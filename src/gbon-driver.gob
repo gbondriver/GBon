@@ -7,6 +7,7 @@ requires 2.0.0
 #include <../config.h>    
 #include "gbon-retval.h"
 #include "gbon-b25.h"
+#include "epgdump/gbonepg.h"
 %}
 
 %privateheader{
@@ -148,6 +149,7 @@ class GBon:Driver from G:Object
     }
 
     public GBon:Driver *new (void) {
+    	   test_main("/home/igari/test11.ts", "test11.json");
         return  (GBonDriver *)(GET_NEW);
     }
 }
