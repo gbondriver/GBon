@@ -118,7 +118,6 @@ static int setSec(SECcache secs[], int i, TSpacket pk, int *ridx) {
         if(sec->seclen > MAXSECLEN){
             /* セクション長が MAXSECLEN より長いときはこのセクションをスキップ */
             sec->cont = 0;
-            fprintf(stderr, "ok 10\n");
             return RETRY;
         }
 
@@ -126,7 +125,6 @@ static int setSec(SECcache secs[], int i, TSpacket pk, int *ridx) {
             memcpy(sec->buf, sec->cur.payload, sec->cur.payloadlen);
             sec->setlen = sec->cur.payloadlen;
             sec->cont = 1;
-            fprintf(stderr, "ok 11\n");
             return 0;
         }
         memcpy(sec->buf, sec->cur.payload, sec->seclen);
@@ -136,10 +134,8 @@ static int setSec(SECcache secs[], int i, TSpacket pk, int *ridx) {
         *ridx = i;
         /* CRCのチェック */
         if(checkcrc(sec)) {
-            fprintf(stderr, "ok 12\n");
             return OK_RETURN;
         }
-            fprintf(stderr, "ok 13\n");
 
         return RETRY; /* 残り処理へ */
     }
@@ -150,7 +146,6 @@ static int setSec(SECcache secs[], int i, TSpacket pk, int *ridx) {
         memcpy(sec->buf + sec->setlen,
                sec->cur.payload, sec->cur.payloadlen);
         sec->setlen += sec->cur.payloadlen;
-            fprintf(stderr, "ok 14\n");
         return 0;
     }
     /* セクション長の残りを設定 */
@@ -161,10 +156,8 @@ static int setSec(SECcache secs[], int i, TSpacket pk, int *ridx) {
     *ridx = i;
     /* CRCのチェック */
     if(checkcrc(sec)) {
-            fprintf(stderr, "ok 15\n");
         return OK_RETURN;
     }
-            fprintf(stderr, "ok 16\n");
     return RETRY; /* 残り処理へ */
 }
 
@@ -206,7 +199,6 @@ retry:
             case RETRY:
                 goto retry;
             case OK_RETURN:
-                printf("cont: ridx: %d\n", ridx);
                 return &secs[ridx];
             }
 	}
@@ -274,7 +266,6 @@ retry:
                     case RETRY:
                         goto retry;
                     case OK_RETURN:
-                        printf("pk.pid: %d, ridx: %d\n", pk.pid, ridx);
                         return &secs[i];
                     }
 		}
@@ -304,7 +295,6 @@ retry:
         case RETRY:
             goto retry;
         case OK_RETURN:
-            printf("cont: ridx: %d\n", ridx);
             return &secs[ridx];
         }
     }
@@ -359,7 +349,6 @@ retry:
             case RETRY:
                 goto retry;
             case OK_RETURN:
-                printf("pk.pid: %d, ridx: %d\n", pk.pid, ridx);
                 return &secs[i];
             }
         }

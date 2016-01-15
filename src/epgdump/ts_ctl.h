@@ -62,6 +62,7 @@ struct	_EIT_CONTROL{
 	int		table_id ;
 	int		servid ;
 	int		event_id ;			// イベントID
+    int section_number;
 	unsigned char	numcontent;
 	unsigned char 	content[7];     //コンテントタイプ
 	unsigned char	usernibble[7];

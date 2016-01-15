@@ -123,10 +123,35 @@ typedef struct _EEVTDtail {
 	char text[MAXSECLEN];
 } EEVTDtail;
 
+typedef struct {
+    int table_id ;
+    int transport_stream_id;
+    int original_network_id;
+    int servid ;
+    int	event_id ;			// イベントID
+    int section_number;
+    unsigned char numcontent;
+    unsigned char content[7];     //コンテントタイプ
+    unsigned char usernibble[7];
+    unsigned char numattachinfo;
+    unsigned char attachinfo[7];  //番組付属情報
+    unsigned char desctags[1024];
+    int numdesctag;
+    char *title ;			// タイトル
+    char *subtitle ;			// サブタイトル
+    short eitextcnt;
+    EITEXTDESC *eitextdesc;
+    char video;				// 映像情報
+    AUDIODESC audiodesc[2];		// 音声情報
+    char freeCA;				// スクランブル
+    int duration;			// 時間
+    time_t start_time;			// 開始時刻
+} EdEit;
+    
 #ifdef __cplusplus
 extern "C"{
 #endif /* __cplusplus */
-
+/*
 	int parseEIThead(unsigned char *data, EIThead *h);
 	int parseEITbody(unsigned char *data, EITbody *b);
 	int parseSEVTdesc(unsigned char *data, SEVTdesc *desc) ;
@@ -137,9 +162,10 @@ extern "C"{
 	int parseEEVTDhead(unsigned char *data, EEVTDhead *desc) ;
 	int parseEEVTDitem(unsigned char *data, EEVTDitem *desc, EIT_CONTROL *eitcur) ;
 	int parseEEVTDtail(unsigned char *data, EEVTDtail *desc) ;
-
 	int  dumpEIT2(unsigned char *data, SVT_CONTROL *svt,EITCHECK *chk);
+*/
 
+    int EdDumpEit(unsigned char *ptr, EdEit *eit);
 
 #ifdef __cplusplus
 }
