@@ -123,7 +123,8 @@ typedef struct _EEVTDtail {
 	char text[MAXSECLEN];
 } EEVTDtail;
 
-typedef struct {
+typedef struct _EdEit {
+    struct _EdEit *next;
     int table_id ;
     int transport_stream_id;
     int original_network_id;
@@ -165,8 +166,8 @@ extern "C"{
 	int  dumpEIT2(unsigned char *data, SVT_CONTROL *svt,EITCHECK *chk);
 */
 
-    int EdDumpEit(unsigned char *ptr, EdEit *eit);
-
+    int Ed_dump_Eit(unsigned char *ptr, EdEit *eit);
+    void Ed_free_Eit(EdEit *eit);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

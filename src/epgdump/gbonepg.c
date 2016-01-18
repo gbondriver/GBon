@@ -193,12 +193,15 @@ static int parse(EDData *ed, unsigned char *buf, int buf_size,
         case 0x27: // EIT(地デジ)
             //fprintf(stderr, "EIT\n");
             //if (ed->sdtflg) {
-            ret = EdDumpEit(ed->sec->buf, &eit);
-            fprintf(stderr, "EIT title: %s\n", eit.title);
-            fprintf(outfile, "%s", canma);
-            dumpEitJson(&eit);
-            fprintf(outfile, "\n");
-            canma = ", ";
+            ret = Ed_dump_Eit(ed->sec->buf, &eit);
+            if (ret == EIT_OK) {
+                fprintf(stderr, "EIT title: %s\n", eit.title);
+                fprintf(outfile, "%s", canma);
+                dumpEitJson(&eit);
+                fprintf(outfile, "\n");
+                canma = ", ";
+            }
+            Ed_free_Eit(&eit);
                 //if (ret == 0) ed->sdtflg = 0;
                 //}
             break;

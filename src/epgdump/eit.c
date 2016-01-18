@@ -403,6 +403,7 @@ static void	conv_title_subtitle(EIT_CONTROL *eitptr)
         return ;
     }
 }
+
 static void	enqueue(EIT_CONTROL *top, EIT_CONTROL *eitptr)
 {
     EIT_CONTROL	*cur ;
@@ -686,7 +687,7 @@ static int old_dumpEIT2(unsigned char *ptr, SVT_CONTROL *svttop,EITCHECK *chk)
     return EIT_OK;
 }
 
-int EdDumpEit(unsigned char *ptr, EdEit *eit)
+int Ed_dump_Eit(unsigned char *ptr)
 {
     EIThead  eith;
     EITbody  eitb;
@@ -707,7 +708,9 @@ int EdDumpEit(unsigned char *ptr, EdEit *eit)
     int loop_blen = 0;
     int loop_elen = 0;
 
-    memset(eit, 0, sizeof(EdEit));
+    EdEit *top, *cur;
+    top = calloc(1, sizeof(EdEit));
+    cur = top;
     
     len = parseEIThead(ptr, &eith); 
     eit->transport_stream_id = eith.transport_stream_id;
@@ -770,7 +773,7 @@ int EdDumpEit(unsigned char *ptr, EdEit *eit)
                 case 0x4D:
                     len = parseSEVTdesc(ptr, &sevtd);
                     if(len > 0) {
-                        if (eit->title) fprintf(stderr, "EIT title is not null");
+                        if (eit->title) fprintf(stderr, "EIT title is not null: %s, %s\n", eit->title, sevtd.event_name);
                         eit->title = calloc(1, (strlen(sevtd.event_name) + 1));
                         memcpy(eit->title, sevtd.event_name, strlen(sevtd.event_name));
                         printf("%d %s\n", eit->event_id, eit->title);
@@ -862,3 +865,29 @@ int EdDumpEit(unsigned char *ptr, EdEit *eit)
     return EIT_OK;
 }
 
+void Ed_free_Eit(EdEit *eit) {
+    int i;
+    fprintf(stderr, "ok 1");
+    if (eit->title) free(eit->title);
+    fprintf(stderr, "ok 2");
+    if (eit->subtitle) free(eit->subtitle);
+    fprintf(stderr, "ok 3");
+    if (eit->eitextcnt > 0) {
+    fprintf(stderr, "ok 4");
+        for (i = 0; i < eit->eitextcnt; i++) {
+            EITEXTDESC *d = eit->eitextdesc + i;
+    fprintf(stderr, "ok 5");
+            if (d->item_description) free(d->item_description);
+    fprintf(stderr, "ok 6");
+    ///if (d->item) free(d->item);
+        }
+    fprintf(stderr, "ok 7");
+        free(eit->eitextdesc);
+    }
+    fprintf(stderr, "ok 8");
+    for (i = 0; i < 2; i++) {
+    fprintf(stderr, "ok 9");
+        if (eit->audiodesc[i].audiodesc) free(eit->audiodesc[i].audiodesc);
+    fprintf(stderr, "ok 10");
+    }
+}
