@@ -419,6 +419,7 @@ static void	enqueue(EIT_CONTROL *top, EIT_CONTROL *eitptr)
     while(cur != NULL){
         rc = cur->start_time - eitptr->start_time;
             if(rc == 0){
+                fprintf(stderr, "free\n");
                 free(eitptr->title);
                 free(eitptr->subtitle);
                 free(eitptr);
@@ -449,7 +450,32 @@ static void	enqueue(EIT_CONTROL *top, EIT_CONTROL *eitptr)
 
 }
 
-static int old_dumpEIT2(unsigned char *ptr, SVT_CONTROL *svttop,EITCHECK *chk)
+static void appendEitControl(EIT_CONTROL *top, EIT_CONTROL *eitptr)
+{
+    EIT_CONTROL	*cur ;
+    cur = top ;
+    time_t		rc ;
+
+    if(top->next == NULL){
+        top->next = eitptr ;
+        eitptr->prev = top ;
+        return ;
+    }
+    cur = top->next ;
+    while(cur != NULL){
+        if(cur->next == NULL){
+            cur->next = eitptr ;
+            eitptr->prev = cur ;
+            conv_title_subtitle(eitptr);
+            return ;
+        }
+        cur = cur->next ;
+    }
+    return ;
+
+}
+
+int old_dumpEIT2(unsigned char *ptr, SVT_CONTROL *svttop,EITCHECK *chk)
 {
     EIThead  eith;
     EITbody  eitb;
@@ -597,7 +623,6 @@ static int old_dumpEIT2(unsigned char *ptr, SVT_CONTROL *svttop,EITCHECK *chk)
                             cur = calloc(1, sizeof(EIT_CONTROL));
                             cur->event_id = eitb.event_id ;
                             cur->servid = eith.service_id ;
-                            cur->section_number = eith.section_number;
                             cur->title = calloc(1, (strlen(sevtd.event_name) + 1));
                             memcpy(cur->title, sevtd.event_name, strlen(sevtd.event_name));
                             cur->subtitle = calloc(1, (strlen(sevtd.text) + 1));
@@ -687,7 +712,23 @@ static int old_dumpEIT2(unsigned char *ptr, SVT_CONTROL *svttop,EITCHECK *chk)
     return EIT_OK;
 }
 
-int Ed_dump_Eit(unsigned char *ptr)
+static EIT_CONTROL* allocEitControl(int servid, int event_id) {
+    EIT_CONTROL *tmp = calloc(1, sizeof(EIT_CONTROL));
+    tmp->servid = servid;
+    tmp->event_id = event_id;
+    return tmp;
+}
+
+static EIT_CONTROL* searchAndAllocIfNotFound(EIT_CONTROL *top,
+                                             int servid, int event_id) {
+    EIT_CONTROL *tmp = searcheit(top, servid, event_id);
+    if (tmp) return tmp;
+    tmp = allocEitControl(servid, event_id);
+    appendEitControl(top, tmp);
+    return tmp;
+}
+
+EdEit* Ed_dump_Eit(unsigned char *ptr)
 {
     EIThead  eith;
     EITbody  eitb;
@@ -699,39 +740,45 @@ int Ed_dump_Eit(unsigned char *ptr)
 
     EEVTDitem save_eevtitem;
 
-//    EIT_CONTROL	*cur ;
-//    EIT_CONTROL	*eittop;
-//    SVT_CONTROL	*svtcur;
-
     int len = 0;
     int loop_len = 0;
     int loop_blen = 0;
     int loop_elen = 0;
 
-    EdEit *top, *cur;
-    top = calloc(1, sizeof(EdEit));
-    cur = top;
+    EdEit *edeit;
+    edeit = calloc(1, sizeof(EdEit));
     
     len = parseEIThead(ptr, &eith); 
-    eit->transport_stream_id = eith.transport_stream_id;
-    eit->original_network_id = eith.original_network_id;
-    eit->servid = eith.service_id;
-    eit->table_id = eith.table_id ;
-    eit->section_number = eith.section_number;
+    edeit->transport_stream_id = eith.transport_stream_id;
+    edeit->original_network_id = eith.original_network_id;
+    edeit->servid = eith.service_id;
+    edeit->table_id = eith.table_id ;
+    edeit->section_number = eith.section_number;
 #ifdef DEBUG
     printf("SV  0x%x Table  [0x%x] \n",eith.service_id,eith.table_id);
 #endif
+        
     ptr += len;
     loop_len = eith.section_length - (len - 3 + 4); // 3は共通ヘッダ長 4はCRC
-    eit->numdesctag = 0;
+
+    int num_loop = 0;
     while(loop_len > 0) {
+        fprintf(stderr, "num loop: %d\n", num_loop++);
         /* 連続する拡張イベントは、漢字コードが泣き別れして
            分割されるようだ。連続かどうかは、item_description_lengthが
            設定されているかどうかで判断できるようだ。 */
         memset(&save_eevtitem, 0, sizeof(EEVTDitem));
 
         len = parseEITbody(ptr, &eitb);
-        eit->event_id = eitb.event_id ;
+        EIT_CONTROL *cur;
+        if (!edeit->eittop) {
+            cur = allocEitControl(eith.service_id, eitb.event_id);
+            edeit->eittop = cur;
+        } else {
+            cur = searchAndAllocIfNotFound
+                (edeit->eittop, eith.service_id, eitb.event_id);
+        }
+        fprintf(stderr, "id %d %d\n", edeit->servid, eitb.event_id);
 
         ptr += len;
         loop_len -= len;
@@ -746,104 +793,104 @@ int Ed_dump_Eit(unsigned char *ptr)
             AudioComponentDesc audioComponentDesc;
             sboff=0;
             desctag = getBit(ptr,&sboff,8);
-            eit->desctags[eit->numdesctag++] = desctag;
+            cur->desctags[cur->numdesctag++] = desctag;
 #ifdef DEBUG
             printf("Event 0x%x desctag [0x%x] savelen %d\n",eitb.event_id,desctag,save_eevtitem.item_length);
 #endif
             switch (desctag) {
-                case 0x50:
-                    len = parseComponentDesc(ptr, &componentDesc);
-                    eit->video = componentDesc.component_type;
-                    break;
-                case 0xC4:
-                    len = parseAudioComponentDesc(ptr, &audioComponentDesc);
-                    if (audioComponentDesc.main_component_flag) ix = 0; //主音声
-                    else ix = 1;
-                    if (eit->audiodesc[ix].audiotype == 0) {
-                        eit->audiodesc[ix].audiotype = audioComponentDesc.component_type;
-                        strncpy(eit->audiodesc[ix].langcode,audioComponentDesc.ISO_639_language_code,3);
-                        if (audioComponentDesc.ES_multi_lingual_flag) {
-                            strcat(eit->audiodesc[ix].langcode,"_");
-                            strncat(eit->audiodesc[ix].langcode,audioComponentDesc.ISO_639_language_code2,3);
-                        }
-                        if (audioComponentDesc.content)
-                            eit->audiodesc[ix].audiodesc = strdup(audioComponentDesc.content);
+            case 0x50:
+                len = parseComponentDesc(ptr, &componentDesc);
+                cur->video = componentDesc.component_type;
+                break;
+            case 0xC4:
+                len = parseAudioComponentDesc(ptr, &audioComponentDesc);
+                if (audioComponentDesc.main_component_flag) ix = 0; //主音声
+                else ix = 1;
+                if (cur->audiodesc[ix].audiotype == 0) {
+                    cur->audiodesc[ix].audiotype = audioComponentDesc.component_type;
+                    strncpy(cur->audiodesc[ix].langcode,audioComponentDesc.ISO_639_language_code,3);
+                    if (audioComponentDesc.ES_multi_lingual_flag) {
+                        strcat(cur->audiodesc[ix].langcode,"_");
+                        strncat(cur->audiodesc[ix].langcode,audioComponentDesc.ISO_639_language_code2,3);
                     }
-                    break;
-                case 0x4D:
-                    len = parseSEVTdesc(ptr, &sevtd);
-                    if(len > 0) {
-                        if (eit->title) fprintf(stderr, "EIT title is not null: %s, %s\n", eit->title, sevtd.event_name);
-                        eit->title = calloc(1, (strlen(sevtd.event_name) + 1));
-                        memcpy(eit->title, sevtd.event_name, strlen(sevtd.event_name));
-                        printf("%d %s\n", eit->event_id, eit->title);
+                    if (audioComponentDesc.content)
+                        cur->audiodesc[ix].audiodesc = strdup(audioComponentDesc.content);
+                }
+                break;
+            case 0x4D:
+                len = parseSEVTdesc(ptr, &sevtd);
+                if(len > 0) {
+                    if (cur->title) fprintf(stderr, "title is not null\n", cur->title);
+                    cur->title = calloc(1, (strlen(sevtd.event_name) + 1));
+                    memcpy(cur->title, sevtd.event_name,
+                           strlen(sevtd.event_name));
+                    cur->subtitle = calloc(1, (strlen(sevtd.text) + 1));
+                    memcpy(cur->subtitle, sevtd.text, strlen(sevtd.text));
+                    printf("%d %s\n", cur->event_id, cur->title);
+                    cur->freeCA = eitb.free_CA_mode;
+                    cur->duration = getDurationSec(eitb.duration);
+                    cur->start_time = getStartTime(eitb.start_time);
+                    //enqueue(eittop, cur);
+                    /*
+                      if ((eith.table_id >= 0x50) && (!svtcur->haveeitschedule)) {
+                      svtcur->haveeitschedule=1;
+                      #ifdef DEBUG
+                      printf("HAVE SCH\n");
+                      #endif
+                      }
+                    */
+                }
+                break;
+            case 0x4E:
+                len = parseEEVTDhead(ptr, &eevthead);
+                if(len > 0) {
+                    ptr += len;
+                    loop_blen -= len;
 
-                        eit->subtitle = calloc(1, (strlen(sevtd.text) + 1));
-                        memcpy(eit->subtitle, sevtd.text, strlen(sevtd.text));
-                        eit->freeCA = eitb.free_CA_mode;
-                        eit->duration = getDurationSec(eitb.duration);
-                        eit->start_time = getStartTime(eitb.start_time);
-    //enqueue(eittop, cur);
-                        /*
-                          if ((eith.table_id >= 0x50) && (!svtcur->haveeitschedule)) {
-                            svtcur->haveeitschedule=1;
-#ifdef DEBUG
-                            printf("HAVE SCH\n");
-#endif
-                        }
-                        */
+                    loop_elen = eevthead.length_of_items;
+                    loop_len -= loop_elen;
+
+                    if (cur->eitextcnt == 0 && eevthead.last_descriptor_number > 0) {
+                        cur->eitextcnt = eevthead.last_descriptor_number+1;
+                        cur->eitextdesc = calloc(cur->eitextcnt,sizeof(EITEXTDESC));
                     }
-                    break;
-                case 0x4E:
-                    len = parseEEVTDhead(ptr, &eevthead);
-                    if(len > 0) {
+                    while(loop_elen > 0) {
+                        len = parseEEVTDitem(ptr, &eevtitem, NULL);
+
                         ptr += len;
+                        loop_elen -= len;
                         loop_blen -= len;
 
-                        loop_elen = eevthead.length_of_items;
-                        loop_len -= loop_elen;
-
-                        if (eit->eitextcnt == 0 && eevthead.last_descriptor_number > 0) {
-                            eit->eitextcnt = eevthead.last_descriptor_number+1;
-                            eit->eitextdesc = calloc(eit->eitextcnt,sizeof(EITEXTDESC));
-                        }
-                        while(loop_elen > 0) {
-                            len = parseEEVTDitem(ptr, &eevtitem, NULL);
-
-                            ptr += len;
-                            loop_elen -= len;
-                            loop_blen -= len;
-
-                            if(checkEEVTDitem(&save_eevtitem, &eevtitem, 
-                                        eevthead.descriptor_number)) {
-                                if (eit->eitextdesc) {
-                                    if (!eit->eitextdesc[eevtitem.descriptor_number].item_description)
-                                        eit->eitextdesc[eevtitem.descriptor_number].item_description = strdup(eevtitem.item_description);
-                                    if (!eit->eitextdesc[eevtitem.descriptor_number].item)
-                                        eit->eitextdesc[eevtitem.descriptor_number].item = strdup(eevtitem.item);
-
-                                }
+                        if(checkEEVTDitem(&save_eevtitem, &eevtitem, 
+                                          eevthead.descriptor_number)) {
+                            if (cur->eitextdesc) {
+                                if (!cur->eitextdesc[eevtitem.descriptor_number].item_description)
+                                    cur->eitextdesc[eevtitem.descriptor_number].item_description = strdup(eevtitem.item_description);
+                                if (!cur->eitextdesc[eevtitem.descriptor_number].item)
+                                    cur->eitextdesc[eevtitem.descriptor_number].item = strdup(eevtitem.item);
 
                             }
                         }
 
-                        len = parseEEVTDtail(ptr, &eevttail);
-
                     }
-                    break;
 
-                case 0x54:
-                    len = parseContentDesc(ptr, &contentDesc);
-                    if (len > 0) {
-                        eit->numcontent = contentDesc.numcontent;
-                        memcpy(eit->content,contentDesc.content,7);
-                        memcpy(eit->usernibble,contentDesc.usernibble,7);
-                        eit->numattachinfo = contentDesc.numattachinfo;
-                        memcpy(eit->attachinfo,contentDesc.attachinfo,7);
-                    }
-                default:
-                    len = parseOTHERdesc(ptr,NULL);
-                    break;
+                    len = parseEEVTDtail(ptr, &eevttail);
+
+                }
+                break;
+
+            case 0x54:
+                len = parseContentDesc(ptr, &contentDesc);
+                if (len > 0) {
+                    cur->numcontent = contentDesc.numcontent;
+                    memcpy(cur->content,contentDesc.content,7);
+                    memcpy(cur->usernibble,contentDesc.usernibble,7);
+                    cur->numattachinfo = contentDesc.numattachinfo;
+                    memcpy(cur->attachinfo,contentDesc.attachinfo,7);
+                }
+            default:
+                len = parseOTHERdesc(ptr,NULL);
+                break;
             }
 
             ptr += len;
@@ -852,42 +899,47 @@ int Ed_dump_Eit(unsigned char *ptr)
         /* 最後のブレークチェック */
 
         if(checkEEVTDitem(&save_eevtitem, NULL, 0)) {
-            if (eit->eitextdesc) {
-                if (!eit->eitextdesc[save_eevtitem.descriptor_number].item_description)
-                    eit->eitextdesc[save_eevtitem.descriptor_number].item_description = strdup(save_eevtitem.item_description);
-                if (!eit->eitextdesc[save_eevtitem.descriptor_number].item)
-                    eit->eitextdesc[save_eevtitem.descriptor_number].item = strdup(save_eevtitem.item);
+            if (cur->eitextdesc) {
+                if (!cur->eitextdesc[save_eevtitem.descriptor_number].item_description)
+                    cur->eitextdesc[save_eevtitem.descriptor_number].item_description = strdup(save_eevtitem.item_description);
+                if (!cur->eitextdesc[save_eevtitem.descriptor_number].item)
+                    cur->eitextdesc[save_eevtitem.descriptor_number].item = strdup(save_eevtitem.item);
             }
 
         }
     }
 
-    return EIT_OK;
+    return edeit;
 }
 
-void Ed_free_Eit(EdEit *eit) {
+void Ed_free_Eit(EdEit *edeit) {
     int i;
+    EIT_CONTROL *cur;
+    
     fprintf(stderr, "ok 1");
-    if (eit->title) free(eit->title);
-    fprintf(stderr, "ok 2");
-    if (eit->subtitle) free(eit->subtitle);
-    fprintf(stderr, "ok 3");
-    if (eit->eitextcnt > 0) {
-    fprintf(stderr, "ok 4");
-        for (i = 0; i < eit->eitextcnt; i++) {
-            EITEXTDESC *d = eit->eitextdesc + i;
-    fprintf(stderr, "ok 5");
-            if (d->item_description) free(d->item_description);
-    fprintf(stderr, "ok 6");
-    ///if (d->item) free(d->item);
+    for (cur = edeit->eittop; cur; cur = cur->next) {
+        if (cur->title) free(cur->title);
+        fprintf(stderr, "ok 2");
+        if (cur->subtitle) free(cur->subtitle);
+        fprintf(stderr, "ok 3");
+        if (cur->eitextcnt > 0) {
+            fprintf(stderr, "ok 4");
+            for (i = 0; i < cur->eitextcnt; i++) {
+                EITEXTDESC *d = cur->eitextdesc + i;
+                fprintf(stderr, "ok 5");
+                if (d->item_description) free(d->item_description);
+                fprintf(stderr, "ok 6");
+                ///if (d->item) free(d->item);
+            }
+            fprintf(stderr, "ok 7");
+            free(cur->eitextdesc);
         }
-    fprintf(stderr, "ok 7");
-        free(eit->eitextdesc);
+        fprintf(stderr, "ok 8");
+        for (i = 0; i < 2; i++) {
+            fprintf(stderr, "ok 9");
+            if (cur->audiodesc[i].audiodesc) free(cur->audiodesc[i].audiodesc);
+            fprintf(stderr, "ok 10");
+        }
     }
-    fprintf(stderr, "ok 8");
-    for (i = 0; i < 2; i++) {
-    fprintf(stderr, "ok 9");
-        if (eit->audiodesc[i].audiodesc) free(eit->audiodesc[i].audiodesc);
-    fprintf(stderr, "ok 10");
-    }
+    free(edeit);
 }

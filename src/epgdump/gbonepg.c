@@ -38,129 +38,148 @@ char	Category[1024];
 char	*extdesc;
 char	ServiceName[1024];
 
-//static	EITCHECK	chk;
+static	EITCHECK	chk;
 
 static FILE *outfile;
 static char *canma = "";
-static void dumpEitJson(EdEit *eit)
+static void dumpEitJson(EdEit *edeit)
 {
     int i;
     char *eitcanma;
     char *eitextcanma;
 
-    fprintf(outfile,"{");
+    fprintf(outfile, "{");
     //fprintf(outfile,"\"id\":\"%s_%d\",",getBSCSGR(svtcur),svtcur->event_id);
-    fprintf(outfile, "\"id\":\"%d_%d\",", eit->servid, eit->event_id);
-    fprintf(outfile, "\"transport_stream_id\":%d,", eit->transport_stream_id);
-    fprintf(outfile, "\"original_network_id\":%d,", eit->original_network_id);
-    fprintf(outfile, "\"service_id\":%d,", eit->servid);
+    fprintf(outfile, "\"transport_stream_id\":%d,", edeit->transport_stream_id);
+    fprintf(outfile, "\"original_network_id\":%d,", edeit->original_network_id);
+    fprintf(outfile, "\"service_id\":%d,", edeit->servid);
     //fprintf(outfile,"\"name\":\"%s\",",svtcur->servicename);
-    if (eit->original_network_id < 0x0010) {
+    if (edeit->original_network_id < 0x0010) {
         fprintf(outfile, "\"satelliteinfo\":{");
         fprintf(outfile, "\"TP\":\"%s%d\",",
-                getTSID2BSCS(eit->transport_stream_id),
-                getTSID2TP(eit->transport_stream_id));
+                getTSID2BSCS(edeit->transport_stream_id),
+                getTSID2TP(edeit->transport_stream_id));
         fprintf(outfile, "\"SLOT\":%d},",
-                getTSID2SLOT(eit->transport_stream_id));
+                getTSID2SLOT(edeit->transport_stream_id));
     }
 
-    fprintf(outfile, "\"table_id\":\"0x%x\",", eit->table_id);
-    fprintf(outfile, "\"section_number\":\"%d\",", eit->section_number);
+    fprintf(outfile, "\"table_id\":\"0x%x\",", edeit->table_id);
+    fprintf(outfile, "\"section_number\":\"%d\"", edeit->section_number);
     //fprintf(outfile,"\"channel\":\"%s_%d\",",getBSCSGR(svtcur),svtcur->event_id);
-    memset(title, '\0', sizeof(title));
-    if (eit->title) strcpy(title, eit->title);
-    strrep(title, "\"", "\\\"");
-    fprintf(outfile,"\"title\":\"%s\",", title);
-    memset(subtitle, '\0', sizeof(subtitle));
-    if (eit->subtitle) strcpy(subtitle, eit->subtitle);
-    strrep(subtitle, "\"", "\\\"");
-    fprintf(outfile,"\"detail\":\"%s\",", subtitle);
-
-    fprintf(outfile,"\"desctags\":\"");
-    for (i = 0; i < eit->numdesctag; i++) {
-        fprintf(outfile, "%x", eit->desctags[i]);
-    }
-    fprintf(outfile, "\",");
-    fprintf(outfile,"\"extdetail\":[");
-    eitextcanma = "";
-    for(i = 0; i < eit->eitextcnt; i++) {
-        if (eit->eitextdesc[i].item_description && eit->eitextdesc[i].item) {
-            strcpy(subtitle, eit->eitextdesc[i].item_description);
-            strrep(subtitle, "\"", "\\\"");
-            fprintf(outfile,"%s{\"item_description\":\"%s\",",
-                    eitextcanma, subtitle);
-            memset(subtitle, '\0', sizeof(subtitle));
-            strcpy(subtitle, eit->eitextdesc[i].item);
-            strrep(subtitle, "\"", "\\\"");
-            fprintf(outfile,"\"item\":\"%s\"}", subtitle);
-            eitextcanma = ",";
-        }
-    }
-    fprintf(outfile,"],");
-
-    fprintf(outfile, "\"start\":%d,", eit->start_time);
-    fprintf(outfile, "\"end\":%d,", eit->start_time + eit->duration);
-    fprintf(outfile,"\"duration\":%d,", eit->duration);
     
-    eitextcanma = "";
-    fprintf(outfile, "\"category\":[");
-    for(i = 0; i < eit->numcontent; i++) {
-        fprintf(outfile,"%s{", eitextcanma);
-        fprintf(outfile,"\"large\": { \"ja_JP\" : \"%s\", \"en\" : \"%s\"},",
-                getContentStr(eit->content[i],
-                              eit->usernibble[i],
-                              CONTENT_LARGE,CONTENT_LANG_JA),
-                getContentStr(eit->content[i],
-                              eit->usernibble[i],
-                              CONTENT_LARGE,CONTENT_LANG_EN));
-        fprintf(outfile,"\"middle\": { \"ja_JP\" : \"%s\", \"en\" : \"%s\"}}",
-                getContentStr(eit->content[i],
-                              eit->usernibble[i],
-                              CONTENT_MIDDLE,CONTENT_LANG_JA),
-                getContentStr(eit->content[i],eit->usernibble[i],
-                              CONTENT_MIDDLE,CONTENT_LANG_EN));
-        eitextcanma = ",";
-    }
-    fprintf(outfile,"],");
+    EIT_CONTROL *cur;
+    eitcanma = "";
+    int num_loop2 = 0;
+    if (edeit->eittop == NULL) {
+        fprintf(stderr, "eittop is null\n");
+        fprintf(outfile, ", \"eits\": [");
+    } else {
+        fprintf(outfile, ", \"eits\": [{");
+        for (cur = edeit->eittop; cur; cur = cur->next) {
+            fprintf(stderr, "num loop2 %d\n", num_loop2++);
+            fprintf(outfile, "%s", eitcanma);
+            fprintf(outfile, "\"id\":\"%d_%d\",", cur->servid, cur->event_id);
+            fprintf(outfile,"\"desctags\":\"");
+            for (i = 0; i < cur->numdesctag; i++) {
+                fprintf(outfile, "%x", cur->desctags[i]);
+            }
+            fprintf(outfile, "\",");
+            fprintf(outfile, "\"event_id\":%d,", cur->event_id);
+            memset(title, '\0', sizeof(title));
+            if (cur->title) strcpy(title, cur->title);
+            strrep(title, "\"", "\\\"");
+            fprintf(outfile,"\"title\":\"%s\",", title);
+            memset(subtitle, '\0', sizeof(subtitle));
+            if (cur->subtitle) strcpy(subtitle, cur->subtitle);
+            strrep(subtitle, "\"", "\\\"");
+            fprintf(outfile,"\"detail\":\"%s\",", subtitle);
 
-    eitextcanma = "";
-    fprintf(outfile, "\"attachinfo\":[");
-    for(i = 0; i < eit->numattachinfo; i++) {
-        fprintf(outfile,"%s\"%s\"", eitextcanma,
-                getAttachInfo(eit->attachinfo[i]));
-        eitextcanma = ",";
-    }
-    fprintf(outfile,"],");
+            fprintf(outfile,"\"extdetail\":[");
+            eitextcanma = "";
+            for(i = 0; i < cur->eitextcnt; i++) {
+                if (cur->eitextdesc[i].item_description && cur->eitextdesc[i].item) {
+                    strcpy(subtitle, cur->eitextdesc[i].item_description);
+                    strrep(subtitle, "\"", "\\\"");
+                    fprintf(outfile,"%s{\"item_description\":\"%s\",",
+                            eitextcanma, subtitle);
+                    memset(subtitle, '\0', sizeof(subtitle));
+                    strcpy(subtitle, cur->eitextdesc[i].item);
+                    strrep(subtitle, "\"", "\\\"");
+                    fprintf(outfile,"\"item\":\"%s\"}", subtitle);
+                    eitextcanma = ",";
+                }
+            }
+            fprintf(outfile,"],");
 
-    fprintf(outfile,"\"video\":{");
-    fprintf(outfile,"\"resolution\":\"%s\",", getVideoResolution(eit->video));
-    fprintf(outfile,"\"aspect\":\"%s\"},", getVideoAspect(eit->video));
+            fprintf(outfile, "\"start\":%d,", cur->start_time);
+            fprintf(outfile, "\"end\":%d,", cur->start_time + cur->duration);
+            fprintf(outfile,"\"duration\":%d,", cur->duration);
+    
+            eitextcanma = "";
+            fprintf(outfile, "\"category\":[");
+            for(i = 0; i < cur->numcontent; i++) {
+                fprintf(outfile,"%s{", eitextcanma);
+                fprintf(outfile,"\"large\": { \"ja_JP\" : \"%s\", \"en\" : \"%s\"},",
+                        getContentStr(cur->content[i],
+                                      cur->usernibble[i],
+                                      CONTENT_LARGE,CONTENT_LANG_JA),
+                        getContentStr(cur->content[i],
+                                      cur->usernibble[i],
+                                      CONTENT_LARGE,CONTENT_LANG_EN));
+                fprintf(outfile,"\"middle\": { \"ja_JP\" : \"%s\", \"en\" : \"%s\"}}",
+                        getContentStr(cur->content[i],
+                                      cur->usernibble[i],
+                                      CONTENT_MIDDLE,CONTENT_LANG_JA),
+                        getContentStr(cur->content[i],cur->usernibble[i],
+                                      CONTENT_MIDDLE,CONTENT_LANG_EN));
+                eitextcanma = ",";
+            }
+            fprintf(outfile,"],");
+
+            eitextcanma = "";
+            fprintf(outfile, "\"attachinfo\":[");
+            for(i = 0; i < cur->numattachinfo; i++) {
+                fprintf(outfile,"%s\"%s\"", eitextcanma,
+                        getAttachInfo(cur->attachinfo[i]));
+                eitextcanma = ",";
+            }
+            fprintf(outfile,"],");
+
+            fprintf(outfile,"\"video\":{");
+            fprintf(outfile,"\"resolution\":\"%s\",", getVideoResolution(cur->video));
+            fprintf(outfile,"\"aspect\":\"%s\"},", getVideoAspect(cur->video));
             
-    eitextcanma = "";
-    fprintf(outfile, "\"audio\":[");
-    for(i = 0; i < 2; i++) {
-        if (eit->audiodesc[i].audiotype > 0) {
-            fprintf(outfile,"%s{\"type\":\"%s\",", eitextcanma,
-                    getAudioComponentDescStr(eit->audiodesc[i].audiotype));
-            fprintf(outfile,"\"langcode\":\"%s\",", eit->audiodesc[i].langcode);
-            fprintf(outfile,"\"extdesc\":\"%s\"}",
-                    eit->audiodesc[i].audiodesc ?
-                    eit->audiodesc[i].audiodesc : "");
-            eitextcanma = ",";
+            eitextcanma = "";
+            fprintf(outfile, "\"audio\":[");
+            for(i = 0; i < 2; i++) {
+                if (cur->audiodesc[i].audiotype > 0) {
+                    fprintf(outfile,"%s{\"type\":\"%s\",", eitextcanma,
+                            getAudioComponentDescStr(cur->audiodesc[i].audiotype));
+                    fprintf(outfile,"\"langcode\":\"%s\",", cur->audiodesc[i].langcode);
+                    fprintf(outfile,"\"extdesc\":\"%s\"}",
+                            cur->audiodesc[i].audiodesc ?
+                            cur->audiodesc[i].audiodesc : "");
+                    eitextcanma = ",";
+                }
+            }
+            fprintf(outfile, "],");
+            
+            fprintf(outfile, "\"freeCA\":%s}", cur->freeCA ? "true" : "false");
+            eitcanma = ",{\n";
         }
     }
-    fprintf(outfile, "],");
-            
-    fprintf(outfile, "\"freeCA\":%s,", eit->freeCA?"true":"false");
-    fprintf(outfile, "\"event_id\":%d", eit->event_id);
-    fprintf(outfile, "}");
+        fprintf(outfile, "]}");
 }
 
 static int parse(EDData *ed, unsigned char *buf, int buf_size,
                 SECcache secs[], int sec_size) {
     SVT_CONTROL *svtcur;
-    EdEit eit;
+    EdEit *edeit;
     int ret;
+
+    memset(&chk,0,sizeof(EITCHECK));
+    chk.waitend = time(NULL) + 10;
+
     while((ed->sec = EDReadTSFromBuffer(buf, buf_size,
                                         secs, sec_size)) != NULL) {
         ed->pid = ed->sec->pid & 0xFF;
@@ -192,18 +211,20 @@ static int parse(EDData *ed, unsigned char *buf, int buf_size,
         case 0x26: // EIT(地デジ)
         case 0x27: // EIT(地デジ)
             //fprintf(stderr, "EIT\n");
-            //if (ed->sdtflg) {
-            ret = Ed_dump_Eit(ed->sec->buf, &eit);
-            if (ret == EIT_OK) {
-                fprintf(stderr, "EIT title: %s\n", eit.title);
+            /*
+            if (ed->sdtflg) {
+                old_dumpEIT2(ed->sec->buf, ed->svttop, &chk);
+                if (ret == 0) ed->sdtflg = 0;
+            }
+            */
+            edeit = Ed_dump_Eit(ed->sec->buf);
+            if (edeit) {
                 fprintf(outfile, "%s", canma);
-                dumpEitJson(&eit);
+                dumpEitJson(edeit);
                 fprintf(outfile, "\n");
                 canma = ", ";
             }
-            Ed_free_Eit(&eit);
-                //if (ret == 0) ed->sdtflg = 0;
-                //}
+            Ed_free_Eit(edeit);
             break;
         case 0x14: // TDT
             fprintf(stderr, "TDT\n");

@@ -128,25 +128,9 @@ typedef struct _EdEit {
     int table_id ;
     int transport_stream_id;
     int original_network_id;
-    int servid ;
-    int	event_id ;			// イベントID
+    int servid;
     int section_number;
-    unsigned char numcontent;
-    unsigned char content[7];     //コンテントタイプ
-    unsigned char usernibble[7];
-    unsigned char numattachinfo;
-    unsigned char attachinfo[7];  //番組付属情報
-    unsigned char desctags[1024];
-    int numdesctag;
-    char *title ;			// タイトル
-    char *subtitle ;			// サブタイトル
-    short eitextcnt;
-    EITEXTDESC *eitextdesc;
-    char video;				// 映像情報
-    AUDIODESC audiodesc[2];		// 音声情報
-    char freeCA;				// スクランブル
-    int duration;			// 時間
-    time_t start_time;			// 開始時刻
+    EIT_CONTROL *eittop;
 } EdEit;
     
 #ifdef __cplusplus
@@ -166,8 +150,9 @@ extern "C"{
 	int  dumpEIT2(unsigned char *data, SVT_CONTROL *svt,EITCHECK *chk);
 */
 
-    int Ed_dump_Eit(unsigned char *ptr, EdEit *eit);
-    void Ed_free_Eit(EdEit *eit);
+    int old_dumpEIT2(unsigned char *ptr, SVT_CONTROL *svttop,EITCHECK *chk);
+    EdEit* Ed_dump_Eit(unsigned char *ptr);
+    void Ed_free_Eit(EdEit *edeit);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

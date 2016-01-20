@@ -77,5 +77,7 @@ struct	_EIT_CONTROL{
 	char	freeCA;				// スクランブル
 	int	duration;			// 時間
 	time_t	start_time;			// 開始時刻
+    unsigned char desctags[1024];
+    int numdesctag;
 };
 #endif
