@@ -94,19 +94,6 @@ int cbon_set_channel(CBon *cbon, unsigned char ch) {
     return bon->SetChannel(ch);
 }
 
-int cbon_set_channel2(CBon *cbon, unsigned char space, unsigned char ch) {
-    if (cbon == NULL) {
-        PERR("cbon is NULl\n");
-        return 0;
-    }
-    if (cbon->pIBon2 == NULL) {
-        PERR("pIBon2 is NULL\n");
-        return 0;
-    }
-    IBonDriver2 *bon = static_cast<IBonDriver2 *>(cbon->pIBon2);
-    return bon->SetChannel(space, ch);
-}
-
 float cbon_get_signal_level(CBon *cbon) {
    if (cbon == NULL) {
         PERR("cbon is NULl\n");
@@ -134,7 +121,33 @@ int cbon_get_ts_stream(CBon *cbon, unsigned char **dest, unsigned int *size,
     return bon->GetTsStream(dest, size, remain);
 }
 
-void cbon_close_tuner(CBon *cbon) {
+unsigned char cbon_wait_ts_stream(CBon *cbon, unsigned char timeout) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0x80;
+    }
+    if (cbon->pIBon == NULL) {
+        PERR("pIBon is NULL\n");
+        return 0x80;
+    }
+    IBonDriver *bon = static_cast<IBonDriver *>(cbon->pIBon);
+    return bon->WaitTsStream(timeout);
+}
+
+unsigned char cbon_get_ready_count(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
+    if (cbon->pIBon == NULL) {
+        PERR("pIBon is NULL\n");
+        return 0;
+    }
+    IBonDriver *bon = static_cast<IBonDriver *>(cbon->pIBon);
+    return bon->GetReadyCount();
+}
+
+void cbon_purge_ts_stream(CBon *cbon) {
     if (cbon == NULL) {
         PERR("cbon is NULl\n");
         return;
@@ -144,7 +157,7 @@ void cbon_close_tuner(CBon *cbon) {
         return;
     }
     IBonDriver *bon = static_cast<IBonDriver *>(cbon->pIBon);
-    bon->CloseTuner();
+    bon->PurgeTsStream();
 }
 
 void cbon_release(CBon *cbon) {
@@ -159,3 +172,174 @@ void cbon_release(CBon *cbon) {
     IBonDriver *bon = static_cast<IBonDriver *>(cbon->pIBon);
     bon->Release();
 }
+
+const unsigned short* cbon_get_tuner_name(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return NULL;
+    }
+    if (cbon->pIBon2 == NULL) {
+        PERR("pIBon2 is NULL\n");
+        return NULL;
+    }
+    IBonDriver2 *bon = static_cast<IBonDriver2 *>(cbon->pIBon2);
+    return bon->GetTunerName();
+}
+
+int cbon_is_tuner_opening(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
+    if (cbon->pIBon2 == NULL) {
+        PERR("pIBon2 is NULL\n");
+        return 0;
+    }
+    IBonDriver2 *bon = static_cast<IBonDriver2 *>(cbon->pIBon2);
+    return bon->IsTunerOpening();
+}
+
+const unsigned short* cbon_enum_tuning_space(CBon *cbon, unsigned char space) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return NULL;
+    }
+    if (cbon->pIBon2 == NULL) {
+        PERR("pIBon2 is NULL\n");
+        return NULL;
+    }
+    IBonDriver2 *bon = static_cast<IBonDriver2 *>(cbon->pIBon2);
+    return bon->EnumTuningSpace(space);
+}
+
+const unsigned short* cbon_enum_channel_name(CBon *cbon, unsigned char space,
+                                             unsigned char ch) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return NULL;
+    }
+    if (cbon->pIBon2 == NULL) {
+        PERR("pIBon2 is NULL\n");
+        return NULL;
+    }
+    IBonDriver2 *bon = static_cast<IBonDriver2 *>(cbon->pIBon2);
+    return bon->EnumChannelName(space, ch);
+}
+
+int cbon_set_channel2(CBon *cbon, unsigned char space, unsigned char ch) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
+    if (cbon->pIBon2 == NULL) {
+        PERR("pIBon2 is NULL\n");
+        return 0;
+    }
+    IBonDriver2 *bon = static_cast<IBonDriver2 *>(cbon->pIBon2);
+    return bon->SetChannel(space, ch);
+}
+
+unsigned char cbon_get_cur_space(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
+    if (cbon->pIBon2 == NULL) {
+        PERR("pIBon2 is NULL\n");
+        return 0;
+    }
+    IBonDriver2 *bon = static_cast<IBonDriver2 *>(cbon->pIBon2);
+    return bon->GetCurSpace();
+}
+
+unsigned char cbon_get_cur_channel(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
+    if (cbon->pIBon2 == NULL) {
+        PERR("pIBon2 is NULL\n");
+        return 0;
+    }
+    IBonDriver2 *bon = static_cast<IBonDriver2 *>(cbon->pIBon2);
+    return bon->GetCurChannel();
+}
+
+void cbon_release2(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return;
+    }
+    if (cbon->pIBon2 == NULL) {
+        PERR("pIBon2 is NULL\n");
+        return;
+    }
+    IBonDriver2 *bon = static_cast<IBonDriver2 *>(cbon->pIBon2);
+    bon->Release();
+}
+
+unsigned char cbon_get_total_device_num(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
+    if (cbon->pIBon3 == NULL) {
+        PERR("pIBon3 is NULL\n");
+        return 0;
+    }
+    IBonDriver3 *bon = static_cast<IBonDriver3 *>(cbon->pIBon3);
+    return bon->GetTotalDeviceNum();
+}
+
+unsigned char cbon_get_active_device_num(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
+    if (cbon->pIBon3 == NULL) {
+        PERR("pIBon3 is NULL\n");
+        return 0;
+    }
+    IBonDriver3 *bon = static_cast<IBonDriver3 *>(cbon->pIBon3);
+    return bon->GetActiveDeviceNum();
+}
+
+int cbon_set_lnb_power(CBon *cbon, int enable) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return 0;
+    }
+    if (cbon->pIBon3 == NULL) {
+        PERR("pIBon3 is NULL\n");
+        return 0;
+    }
+    IBonDriver3 *bon = static_cast<IBonDriver3 *>(cbon->pIBon3);
+    return bon->SetLnbPower(enable);
+}
+
+void cbon_release3(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return;
+    }
+    if (cbon->pIBon3 == NULL) {
+        PERR("pIBon3 is NULL\n");
+        return;
+    }
+    IBonDriver3 *bon = static_cast<IBonDriver3 *>(cbon->pIBon3);
+    bon->Release();
+}
+
+void cbon_close_tuner(CBon *cbon) {
+    if (cbon == NULL) {
+        PERR("cbon is NULl\n");
+        return;
+    }
+    if (cbon->pIBon == NULL) {
+        PERR("pIBon is NULL\n");
+        return;
+    }
+    IBonDriver *bon = static_cast<IBonDriver *>(cbon->pIBon);
+    bon->CloseTuner();
+}
+
