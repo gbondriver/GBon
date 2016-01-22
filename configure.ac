@@ -1,6 +1,6 @@
 AC_PREREQ(2.65)
 
-AC_INIT([gbon], [1.0.0], [gbon@github])
+AC_INIT([gbon], [1.0.0], [gbondriver@github])
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -18,7 +18,7 @@ AM_PATH_GLIB_2_0([2.32.4], [], [], [gobject])
 
 GOBJECT_INTROSPECTION_REQUIRE([1.32.1])
 GOB2_CHECK([2.0.0])
-#GTK_DOC_CHECK([1.18-2])
+GTK_DOC_CHECK([1.18-2])
 
 # Checks for b25 support.
 AC_ARG_ENABLE(b25,
@@ -80,6 +80,9 @@ AC_LANG_POP([C++])
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
+  doc/Makefile
+  doc/reference/Makefile
+  doc/reference/version.xml
 ])
 
 AC_OUTPUT

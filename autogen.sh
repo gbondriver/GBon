@@ -5,5 +5,5 @@ set -e
 
 mkdir -p m4
 
-#gtkdocize --copy --docdir doc/reference
+gtkdocize --copy --docdir doc/reference
 autoreconf --install
