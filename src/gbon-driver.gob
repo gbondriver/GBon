@@ -21,6 +21,7 @@ class GBon:Driver from G:Object
         destroy {
             if (VAR) {
                 g_printerr("free cbon\n");
+                cbon_release(VAR);
                 free(VAR);
             }
         };
@@ -72,13 +73,6 @@ class GBon:Driver from G:Object
                                -5, "set_channel() error\n");
     }
 
-    public void set_channel2(self, guint8 space, guint8 ch, GError **err) {
-        gint b = cbon_set_channel2(self->_priv->cbon, space, ch);
-        if (!b)
-            *err = g_error_new(self->_priv->gquark,
-                               -6, "set_channel2() error\n");
-    }
-
     public gfloat get_signal_level(self, GError **err) {
         gfloat f = cbon_get_signal_level(self->_priv->cbon);
         if (f < 0.0)
@@ -86,6 +80,7 @@ class GBon:Driver from G:Object
                                -7, "get_signal_level() error\n");
         return f;
     }
+
 
 /**
  * get_ts_stream:
@@ -127,24 +122,67 @@ class GBon:Driver from G:Object
         return rv;
     }
 
+    public guint8 wait_ts_stream(self, guint8 timeout) {
+        return cbon_wait_ts_stream(self->_priv->cbon, timeout);
+    }
+    public guint8 get_ready_count(self) {
+        return cbon_get_ready_count(self->_priv->cbon);
+    }
+    public void purge_ts_stream(self) {
+        cbon_purge_ts_stream(self->_priv->cbon);
+    }
+
+    public gchar* get_tuner_name(self) {
+        const unsigned short *lpctstr = cbon_get_tuner_name(self->_priv->cbon);
+        return lpctstr;
+    }
+    public gboolean is_tuner_opening(self) {
+        return cbon_is_tuner_opening(self->_priv->cbon);
+    }
+    public guchar* enum_tuning_space(self, guint8 space) {
+        const unsigned short *lpctstr
+            = cbon_enum_tuning_space(self->_priv->cbon, space);
+        return lpctstr;
+    }
+    public guchar* enum_channel_name(self, guint8 space, guint8 ch) {
+        const unsigned short *lpctstr
+            = cbon_enum_channel_name(self->_priv->cbon, space, ch);
+        return lpctstr;
+    }
+    
+    public void set_channel2(self, guint8 space, guint8 ch, GError **err) {
+        gint b = cbon_set_channel2(self->_priv->cbon, space, ch);
+        if (!b)
+            *err = g_error_new(self->_priv->gquark,
+                               -6, "set_channel2() error\n");
+    }
+
+    public guint8 get_cur_space(self) {
+        return cbon_get_cur_space(self->_priv->cbon);
+    }
+    public guint8 get_cur_channel(self) {
+        return cbon_get_cur_channel(self->_priv->cbon);
+    }
+
+    public guint8 get_total_device_num(self) {
+        return cbon_get_total_device_num(self->_priv->cbon);
+    }
+    public guint8 get_active_device_num(self) {
+        return cbon_get_active_device_num(self->_priv->cbon);
+    }
+    public void set_lnb_power(self, gboolean enable, GError **err) {
+        gint b = cbon_set_lnb_power(self->_priv->cbon, enable);
+        if (!b)
+            *err = g_error_new(self->_priv->gquark,
+                               -6, "set_lnb_power() error\n");
+    }
+
     public void close_tuner(self) {
         cbon_close_tuner(self->_priv->cbon);
     }
 
     public void release(self) {
         cbon_release(self->_priv->cbon);
-    }
-
-/**
- * read2: 
- * Returns: (transfer none)
- *
- */
-    public GBonRetVal *read2(self, GError **err) {
-        *err = g_error_new(self->_priv->gquark,
-                           -5, "error test %d\n", -5);
-        return NULL;
-        
     }
 
     public GBon:Driver *new (void) {
