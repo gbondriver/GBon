@@ -36,13 +36,11 @@ typedef struct _CBon {
     int cbon_set_channel2(CBon *cbon, unsigned char space, unsigned char ch);
     unsigned char cbon_get_cur_space(CBon *cbon);
     unsigned char cbon_get_cur_channel(CBon *cbon);
-    void cbon_release2(CBon *cbon);
 
     //IBonDriver3.h
     unsigned char cbon_get_total_device_num(CBon *cbon);
     unsigned char cbon_get_active_device_num(CBon *cbon);
     int cbon_set_lnb_power(CBon *cbon, int enable);
-    void cbon_release3(CBon *cbon);
 
     void cbon_close_tuner(CBon *cbon);
 #ifdef __cplusplus

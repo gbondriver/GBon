@@ -44,14 +44,16 @@ int cbon_create_driver(CBon *cbon) {
     char *err;
     IBonDriver *(*f)() = (IBonDriver *(*)())::dlsym(cbon->hModule,
                                                     "CreateBonDriver");
-    IBonDriver *pIBon, *pIBon2, *pIBon3;
+    IBonDriver *pIBon;
+    IBonDriver2 *pIBon2;
+    IBonDriver3 *pIBon3;
     pIBon = pIBon2 = pIBon3 = NULL;
     if ((err = ::dlerror()) == NULL) {
         pIBon = f();
         if (pIBon) {
             pIBon2 = dynamic_cast<IBonDriver2 *>(pIBon);
             if (pIBon2) {
-                pIBon3 = dynamic_cast<IBonDriver3 *>(pIBon2);
+                pIBon3 = dynamic_cast<IBonDriver3 *>(pIBon);
             }
         } else {
             PERR("pIBon is NULL 2: %s\n", err);
@@ -65,6 +67,7 @@ int cbon_create_driver(CBon *cbon) {
     cbon->pIBon = pIBon;
     cbon->pIBon2 = pIBon2;
     cbon->pIBon3 = pIBon3;
+    //PERR("%p, %p, %p\n", pIBon, pIBon2, pIBon3);
     return 0;
 }
 
@@ -160,18 +163,6 @@ void cbon_purge_ts_stream(CBon *cbon) {
     bon->PurgeTsStream();
 }
 
-void cbon_release(CBon *cbon) {
-    if (cbon == NULL) {
-        PERR("cbon is NULl\n");
-        return;
-    }
-    if (cbon->pIBon == NULL) {
-        PERR("pIBon is NULL\n");
-        return;
-    }
-    IBonDriver *bon = static_cast<IBonDriver *>(cbon->pIBon);
-    bon->Release();
-}
 
 const unsigned short* cbon_get_tuner_name(CBon *cbon) {
     if (cbon == NULL) {
@@ -265,18 +256,6 @@ unsigned char cbon_get_cur_channel(CBon *cbon) {
     return bon->GetCurChannel();
 }
 
-void cbon_release2(CBon *cbon) {
-    if (cbon == NULL) {
-        PERR("cbon is NULl\n");
-        return;
-    }
-    if (cbon->pIBon2 == NULL) {
-        PERR("pIBon2 is NULL\n");
-        return;
-    }
-    IBonDriver2 *bon = static_cast<IBonDriver2 *>(cbon->pIBon2);
-    bon->Release();
-}
 
 unsigned char cbon_get_total_device_num(CBon *cbon) {
     if (cbon == NULL) {
@@ -317,17 +296,28 @@ int cbon_set_lnb_power(CBon *cbon, int enable) {
     return bon->SetLnbPower(enable);
 }
 
-void cbon_release3(CBon *cbon) {
+void cbon_release(CBon *cbon) {
     if (cbon == NULL) {
         PERR("cbon is NULl\n");
         return;
     }
-    if (cbon->pIBon3 == NULL) {
-        PERR("pIBon3 is NULL\n");
+    if (cbon->pIBon == NULL) {
+        PERR("pIBon is NULL\n");
         return;
     }
-    IBonDriver3 *bon = static_cast<IBonDriver3 *>(cbon->pIBon3);
+    IBonDriver *bon = static_cast<IBonDriver *>(cbon->pIBon);
     bon->Release();
+
+    if (cbon->pIBon2 && (cbon->pIBon != cbon->pIBon2)) {
+        IBonDriver2 *bon2 = static_cast<IBonDriver2 *>(cbon->pIBon2);
+        bon2->Release();
+    }
+
+    if (cbon->pIBon3 &&
+        (cbon->pIBon != cbon->pIBon3 && cbon->pIBon2 != cbon->pIBon3)) {
+        IBonDriver3 *bon3 = static_cast<IBonDriver3 *>(cbon->pIBon3);
+        bon3->Release();
+    }
 }
 
 void cbon_close_tuner(CBon *cbon) {
