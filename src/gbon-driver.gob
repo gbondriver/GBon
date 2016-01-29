@@ -25,13 +25,6 @@ class GBon:Driver from G:Object
             }
         };
 
-    private GBonB25 *b25 = NULL
-        unref {
-            if (VAR) {
-                g_printerr("unref b25\n");
-                g_object_unref(VAR);
-            }
-        };
                                
     private GQuark gquark= {g_quark_from_static_string("GBon")};
 
