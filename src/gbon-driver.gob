@@ -4,6 +4,7 @@ requires 2.0.0
 %headertop{
 #include <stdio.h>
 #include <stdlib.h>
+#include <iconv.h>
 #include <../config.h>    
 #include "gbon-retval.h"
 #include "gbon-b25.h"
@@ -27,6 +28,22 @@ class GBon:Driver from G:Object
 
                                
     private GQuark gquark= {g_quark_from_static_string("GBon")};
+
+
+    private int convert(char *src, char *dst, size_t dstsize) {
+        iconv_t d = iconv_open("UTF-8", "UTF-16LE");
+	if (d == (iconv_t)-1)
+		return -1;
+	//size_t srclen = strlen(src) + 1;
+        size_t srclen = 256;
+	size_t dstlen = dstsize - 2;
+	size_t ret = iconv(d, &src, &srclen, &dst, &dstlen);
+	//*dst = *(dst + 1) = '\0';
+	iconv_close(d);
+	if (ret == (size_t)-1)
+		return -2;
+	return 0;
+    }
 
 
     public void load_module(self, gchar *driverFilename, GError **err) {
@@ -128,22 +145,46 @@ class GBon:Driver from G:Object
         cbon_release(self->_priv->cbon);
     }
 
+/**
+ * get_tuner_name:
+ * Returns: (transfer full)
+ *
+ */
     public gchar* get_tuner_name(self) {
         const unsigned short *lpctstr = cbon_get_tuner_name(self->_priv->cbon);
-        return lpctstr;
+        char dst[256];
+        int ret = self_convert((char*)lpctstr, dst, sizeof(dst));
+        if (ret < 0) return g_strdup("");
+        return g_strdup(dst);
     }
     public gboolean is_tuner_opening(self) {
         return cbon_is_tuner_opening(self->_priv->cbon);
     }
-    public guchar* enum_tuning_space(self, guint8 space) {
+/**
+ * enum_tuning_space:
+ * Returns: (transfer full)
+ *
+ */
+    public gchar* enum_tuning_space(self, guint8 space) {
         const unsigned short *lpctstr
             = cbon_enum_tuning_space(self->_priv->cbon, space);
-        return lpctstr;
+        char dst[256];
+        int ret = self_convert((char*)lpctstr, dst, sizeof(dst));
+        if (ret < 0) return g_strdup("");
+        return g_strdup(dst);
     }
-    public guchar* enum_channel_name(self, guint8 space, guint8 ch) {
+/**
+ * enum_channel_name:
+ * Returns: (transfer full)
+ *
+ */
+    public gchar* enum_channel_name(self, guint8 space, guint8 ch) {
         const unsigned short *lpctstr
             = cbon_enum_channel_name(self->_priv->cbon, space, ch);
-        return lpctstr;
+        char dst[256];
+        int ret = self_convert((char*)lpctstr, dst, sizeof(dst));
+        if (ret < 0) return g_strdup("");
+        return g_strdup(dst);
     }
     
     public void set_channel2(self, guint8 space, guint8 ch, GError **err) {
