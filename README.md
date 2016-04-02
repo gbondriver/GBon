@@ -44,9 +44,5 @@ python testwatch.py <bondriver> <spaceNo> <channel>
 
 ## まだできてないけど、やりたいこと
 
- * 番組情報やepgデータをsignalで発行する。
  * python以外での動作check。
 
-## 不都合
-
- * J Sportが視聴できない。番宣のときに見れたことがあった。
